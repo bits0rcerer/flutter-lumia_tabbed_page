@@ -1,6 +1,6 @@
 name: lumia_tabbed_page
 description: A windows phone tabbed page like widget for flutter
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/bits0rcerer/flutter-lumia_tabbed_page
 
 environment:
