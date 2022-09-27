@@ -1,8 +1,7 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:lumia_tabbed_page/src/body.dart';
 import 'package:lumia_tabbed_page/src/controller.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:lumia_tabbed_page/src/header.dart';
 
 class LumiaTabbedPage extends StatefulWidget {
   const LumiaTabbedPage({
@@ -39,13 +38,10 @@ class LumiaTabbedPage extends StatefulWidget {
   final TextStyle? selectedHeaderTextStyle;
 
   @override
-  _LumiaTabbedPageState createState() => _LumiaTabbedPageState();
+  State<LumiaTabbedPage> createState() => _LumiaTabbedPageState();
 }
 
 class _LumiaTabbedPageState extends State<LumiaTabbedPage> {
-  final itemScrollController = ItemScrollController();
-  final itemPositionListener = ItemPositionsListener.create();
-
   late LumiaTabbedPageController controller;
   late PageController pageController;
 
@@ -55,44 +51,11 @@ class _LumiaTabbedPageState extends State<LumiaTabbedPage> {
         LumiaTabbedPageController(
           initialIndex: widget.initialIndex,
         );
-    _validateController(controller);
 
     pageController =
         PageController(initialPage: controller.selectedIndex, keepPage: true);
 
-    controller.addListener(_controllerListener);
     super.initState();
-  }
-
-  void _controllerListener() {
-    _validateController(controller);
-    _scrollToPage(controller.selectedIndex, scrollHeader: false);
-  }
-
-  void _validateController(LumiaTabbedPageController c) {
-    controller.selectedIndex = max(0, controller.selectedIndex);
-    controller.selectedIndex =
-        min(controller.selectedIndex, widget.pageTitles.length - 1);
-  }
-
-  Future<void> _scrollToPage(int index,
-      {bool scrollHeader = true, bool scrollBody = true}) async {
-    if (scrollHeader) {
-      await itemScrollController.scrollTo(
-          index: index,
-          duration: widget.scrollDuration,
-          curve: Curves.easeInOutCubic);
-      setState(() {
-        controller.selectedIndex = index;
-      });
-    }
-    if (scrollBody) {
-      await pageController.animateToPage(
-        index,
-        duration: widget.scrollDuration,
-        curve: Curves.easeInOutCubic,
-      );
-    }
   }
 
   @override
@@ -106,65 +69,25 @@ class _LumiaTabbedPageState extends State<LumiaTabbedPage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             primary: false,
-            flexibleSpace:
-                SizedBox(width: mq.size.width, child: _buildHeader()),
+            flexibleSpace: SizedBox(
+                width: mq.size.width,
+                child: LumiaTabbedPageHeader(
+                  controller: controller,
+                  pageTitles: widget.pageTitles,
+                  headerPadding: widget.headerPadding,
+                  initialIndex: widget.initialIndex,
+                  selectedHeaderTextStyle: widget.selectedHeaderTextStyle,
+                  unselectedHeaderTextStyle: widget.unselectedHeaderTextStyle,
+                )),
             centerTitle: true,
           ),
-          body: _buildBody(),
-        ));
-  }
-
-  Widget _buildHeader() {
-    return ScrollablePositionedList.builder(
-      itemCount: widget.pageTitles.length,
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            controller.removeListener(_controllerListener);
-            _scrollToPage(index, scrollHeader: false).then((_) {
-              controller.addListener(_controllerListener);
-            });
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              widget.pageTitles.elementAt(index),
-              maxLines: 1,
-              style: _getTextStyle(index),
-            ),
+          body: LumiaTabbedPageBody(
+            bodyBuilder: widget.bodyBuilder,
+            pageCount: widget.pageTitles.length,
+            initialIndex: widget.initialIndex,
+            controller: controller,
+            scrollDuration: widget.scrollDuration,
           ),
-        );
-      },
-      initialScrollIndex: controller.initialIndex,
-      physics: const ClampingScrollPhysics(),
-      padding: widget.headerPadding,
-      scrollDirection: Axis.horizontal,
-      itemScrollController: itemScrollController,
-      itemPositionsListener: itemPositionListener,
-    );
-  }
-
-  Widget _buildBody() {
-    return PageView.builder(
-      itemBuilder: widget.bodyBuilder,
-      itemCount: widget.pageTitles.length,
-      controller: pageController,
-      onPageChanged: (index) => _scrollToPage(index, scrollBody: false),
-    );
-  }
-
-  TextStyle _getTextStyle(int index) {
-    final selected = index == controller.selectedIndex;
-
-    final customStyle = selected
-        ? widget.selectedHeaderTextStyle
-        : widget.unselectedHeaderTextStyle;
-
-    return customStyle ??
-        (selected
-            ? const TextStyle(
-                inherit: true, fontSize: 40, fontWeight: FontWeight.w900)
-            : const TextStyle(
-                inherit: true, fontSize: 40, fontWeight: FontWeight.w400));
+        ));
   }
 }

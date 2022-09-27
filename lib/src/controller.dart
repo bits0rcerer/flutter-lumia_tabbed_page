@@ -1,7 +1,16 @@
 import 'package:flutter/widgets.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 /// Controller to interact with a LumiaTabbedPage
 class LumiaTabbedPageController extends ChangeNotifier {
+  final _itemScrollController = ItemScrollController();
+
+  ItemScrollController get itemScrollController => _itemScrollController;
+
+  final _itemPositionListener = ItemPositionsListener.create();
+
+  ItemPositionsListener get itemPositionListener => _itemPositionListener;
+
   /// initial tabbed select by the LumiaTabbedPage
   final int initialIndex;
   int _selectedIndex = 0;
